@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/kevinwallace/fieldsn"
 )
@@ -191,4 +192,21 @@ func MustParseEntry(line string) Entry {
 		panic(err)
 	}
 	return e
+}
+
+// ParseCrontab parses the contents of a crontab file.
+func ParseCrontab(s string) ([]Entry, error) {
+	var entries []Entry
+	for _, line := range strings.Split(s, "\n") {
+		line = strings.TrimLeftFunc(line, unicode.IsSpace)
+		if line == "" || line[0] == '#' {
+			continue
+		}
+		entry, err := ParseEntry(line)
+		if err != nil {
+			return nil, err
+		}
+		entries = append(entries, entry)
+	}
+	return entries, nil
 }

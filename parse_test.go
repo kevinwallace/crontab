@@ -58,3 +58,42 @@ func TestParseEntry(t *testing.T) {
 	testBad("0 1 2 3 4-5-6")
 	testBad("0 1 2 3 4/?")
 }
+
+func TestParseCrontab(t *testing.T) {
+	test := func(s string, expected ...Entry) {
+		actual, err := ParseCrontab(s)
+		if err != nil {
+			t.Errorf("Error parsing crontab:\n%s\n%s", s, err)
+			return
+		}
+		if !reflect.DeepEqual(actual, expected) {
+			t.Errorf("Crontab:\n%s\nExpected: %v\nActual: %v", s, expected, actual)
+		}
+	}
+
+	testBad := func(s string) {
+		actual, err := ParseCrontab(s)
+		if err == nil {
+			t.Errorf("Expected error parsing crontab:\n%s\nActual: %v", s, actual)
+		}
+	}
+
+	test("# this is a comment")
+	test(
+		"0 1 2 3 4 # this is not a comment",
+		MustParseEntry("0 1 2 3 4 # this is not a comment"))
+	test(
+		"0 1 2 3 4 a\n"+
+			"# this is a comment\n"+
+			"\n"+
+			" \n"+
+			"     # another comment\n"+
+			"1 2 3 4 5 b\n",
+		MustParseEntry("0 1 2 3 4 a"),
+		MustParseEntry("1 2 3 4 5 b"))
+
+	testBad(
+		"0 1 2 3 4 this line is fine\n" +
+			"this line is bogus\n" +
+			"0 1 2 3 4 this line is also fine\n")
+}
